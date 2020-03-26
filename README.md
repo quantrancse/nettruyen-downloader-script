@@ -24,7 +24,7 @@ For more infomation about the project please read in [Nettruyen Downloader](http
 <!-- GETTING STARTED -->
 ## Usage
 
-The script will download into working directory.
+The script will download into current working directory.
 
 ### Prerequisites
 
