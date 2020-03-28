@@ -144,7 +144,7 @@ class DownloadEngine():
 
             # Limit download time of an image is 5 secs
             start = time.time()
-            timeout = 5
+            timeout = 10
             while True:
                 try:
                     img_data = requests.get(
@@ -154,8 +154,9 @@ class DownloadEngine():
                     break
                 except:
                     if time.time() - start > timeout:
+                        print("Error download image: " + img_path_name)
                         break
-                    print('Retry: download image: ' + img_url)
+                    print('Retry download image: ' + img_url)
                     time.sleep(1)
                     continue
 
