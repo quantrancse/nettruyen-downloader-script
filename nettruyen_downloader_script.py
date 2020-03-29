@@ -266,14 +266,19 @@ if __name__ == "__main__":
                         help="download/update all chapter")
     parser.add_argument("-f", "--fromto", nargs=2, metavar=('from_chapter', 'to_chapter'),
                         help="download from one chapter to another chapter")
+    parser.add_argument("-c", "--chapter", nargs=1, metavar=('chapter'),
+                        help="download one chapter")
     args = parser.parse_args()
 
     bridge = Bridge()
 
-    if not (args.all or args.fromto):
-        parser.error('No action requested, add --all or --fromto')
+    if not (args.all or args.fromto or args.chapter):
+        parser.error('No action requested, add --all or --fromto or --chapter')
     elif args.all:
         bridge.startDownload(args.manga_url, 'start_chapter', 'end_chapter')
     elif args.fromto:
         bridge.startDownload(
             args.manga_url, args.fromto[0], args.fromto[1])
+    elif args.chapter:
+        bridge.startDownload(
+            args.manga_url, args.chapter[0], args.chapter[0])

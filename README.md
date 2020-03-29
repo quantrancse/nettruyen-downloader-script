@@ -35,7 +35,9 @@ pip install argparse
 ```
 ### Run the script
 ```sh
-usage: nettruyen_downloader_script.py [-h] [-a] [-f from_chapter to_chapter] manga_url
+usage: nettruyen_downloader_script.py [-h] [-a] [-f from_chapter to_chapter]
+                                      [-c chapter]
+                                      manga_url
 
 positional arguments:
   manga_url             url to the manga homepage
@@ -45,7 +47,8 @@ optional arguments:
   -a, --all             download/update all chapter
   -f from_chapter to_chapter, --fromto from_chapter to_chapter
                         download from one chapter to another chapter
-
+  -c chapter, --chapter chapter
+                        download one chapter
 ```
 
 ## Recommended Manga Viewer
