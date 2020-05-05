@@ -26,7 +26,9 @@ class MangaInfo():
 
 class DownloadEngine():
 
-    stop_signal = 0
+    def __init__(self):
+        self.stop_signal = 0
+        self.error403_signal = 0
 
     def setManga(self, manga):
         self.current_manga = manga
@@ -61,7 +63,7 @@ class DownloadEngine():
 
             # Create directory and start to download
             index = 0
-            print("Start download ..... Press Ctrl+C to stop.")
+            print('Start download ..... Press Ctrl+C to stop.')
             for chapter_data in chapter_list:
 
                 if self.stop_signal:
@@ -82,10 +84,10 @@ class DownloadEngine():
 
         for content_url in soup.find('div', class_='reading-detail box_doc').find_all('img'):
             if content_url not in contents:
-                if any(img_fm in content_url['src'] for img_fm in self.image_formats):
-                    contents.append(content_url['src'])
-                elif content_url.has_attr('data-cdn') and any(img_fm in content_url['data-cdn'] for img_fm in self.image_formats):
+                if content_url.has_attr('data-cdn') and any(img_fm in content_url['data-cdn'] for img_fm in self.image_formats):
                     contents.append(content_url['data-cdn'])
+                elif any(img_fm in content_url['src'] for img_fm in self.image_formats):
+                    contents.append(content_url['src'])
                 elif content_url.has_attr('data-original'):
                     contents.append(content_url['data-original'])
                 else:
@@ -102,7 +104,7 @@ class DownloadEngine():
                 img_path_name = chapter_dir_path + '/image_' + img_name
             else:
                 img_path_name = chapter_dir_path + \
-                    '/image_' + "{0:0=3d}".format(image_index) + '.jpg'
+                    '/image_' + '{0:0=3d}'.format(image_index) + '.jpg'
             img_path_list.append(img_path_name)
             image_index += 1
 
@@ -133,8 +135,13 @@ class DownloadEngine():
             # Threading for download each image
             with ThreadPoolExecutor(max_workers=20) as executor:
                 executor.map(self.downloadImage, image_data_list)
+
+            if self.error403_signal:
+                print(chapter_data['chapter_name'] +
+                      ': Can not download some images. Please check again!')
+                self.error403_signal = 0
         except:
-            print("Error get chapter info. Please try again later.")
+            print('Error get chapter info. Please try again later.')
 
         print('Finish ' + chapter_data['chapter_name'])
 
@@ -148,13 +155,16 @@ class DownloadEngine():
             while True:
                 try:
                     img_data = requests.get(
-                        img_url, headers=HEADERS, timeout=5).content
-                    with open(img_path_name, 'wb') as handler:
-                        handler.write(img_data)
+                        img_url, headers=HEADERS, timeout=5)
+                    if img_data.status_code == 403:
+                        self.error403_signal = 1
+                    else:
+                        with open(img_path_name, 'wb') as handler:
+                            handler.write(img_data.content)
                     break
                 except:
                     if time.time() - start > timeout:
-                        print("Error download image: " + img_path_name)
+                        print('Error download image: ' + img_path_name)
                         break
                     print('Retry download image: ' + img_url)
                     time.sleep(1)
@@ -191,21 +201,21 @@ class Bridge():
         current_manga_url = self.manga_url
 
         if not any(substr in current_manga_url for substr in ['nhattruyen.com/truyen-tranh/', 'nettruyen.com/truyen-tranh/']):
-            print("Invalid manga url. Please try again.")
+            print('Invalid manga url. Please try again.')
             return False
         else:
             try:
                 request = requests.get(current_manga_url, timeout=5)
                 soup = BeautifulSoup(request.text, 'html.parser')
                 if not soup.find('div', id='nt_listchapter'):
-                    print("Invalid manga url. Please try again.")
+                    print('Invalid manga url. Please try again.')
                     return False
                 else:
                     self.current_manga.manga_url = str(current_manga_url)
                     self.crawlMangaHomePage()
                     return True
             except:
-                print("Error getting manga page. Please try again.")
+                print('Error getting manga page. Please try again.')
                 return False
 
     def crawlMangaHomePage(self):
@@ -254,20 +264,20 @@ class Bridge():
                 range(from_chapter_index, to_chapter_index + 1))
             return True
         else:
-            print("Invalid manga chapter input. Please try again.")
+            print('Invalid manga chapter input. Please try again.')
             return False
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("manga_url", type=str,
-                        help="url to the manga homepage")
-    parser.add_argument("-a", "--all", action="store_true",
-                        help="download/update all chapter")
-    parser.add_argument("-f", "--fromto", nargs=2, metavar=('from_chapter', 'to_chapter'),
-                        help="download from one chapter to another chapter")
-    parser.add_argument("-c", "--chapter", nargs=1, metavar=('chapter'),
-                        help="download one chapter")
+    parser.add_argument('manga_url', type=str,
+                        help='url to the manga homepage')
+    parser.add_argument('-a', '--all', action='store_true',
+                        help='download/update all chapter')
+    parser.add_argument('-f', '--fromto', nargs=2, metavar=('from_chapter', 'to_chapter'),
+                        help='download from one chapter to another chapter')
+    parser.add_argument('-c', '--chapter', nargs=1, metavar=('chapter'),
+                        help='download one chapter')
     args = parser.parse_args()
 
     bridge = Bridge()
