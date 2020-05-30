@@ -10,7 +10,7 @@
   <h2 align="center">NetTruyen Downloader Script</h2>
 
   <p align="center">
-    Python script of <a href=https://github.com/quantrancse/nettruyen-downloader>Nettruyen Downloader</a> for Linux
+    Python script of <a href=https://github.com/quantrancse/nettruyen-downloader>Nettruyen Downloader</a>
     <br />
     <br />
   </p>
