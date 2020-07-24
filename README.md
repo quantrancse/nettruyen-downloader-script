@@ -18,6 +18,7 @@
 
 <!-- ABOUT -->
 ## About
+[Update] This tool is not working anymore. The raw requests to the image host have been blocked by the Cloudflare firewall. And I'm too lazy.
 
 For more infomation about the project please read in [Nettruyen Downloader](https://github.com/quantrancse/nettruyen-downloaderm).
 
