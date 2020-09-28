@@ -18,7 +18,13 @@
 
 <!-- ABOUT -->
 ## About
-[Update] This tool is not working anymore. The raw requests to the image host have been blocked by the Cloudflare firewall. And I'm too lazy.
+[Update_1] This tool is not working anymore. The raw requests to the image host have been blocked by the Cloudflare firewall. And I'm too lazy.
+
+[Update_2] I've found a Tampermonkey script that works on different manga sites: https://github.com/lelinhtinh/Userscript/tree/master/manga_comic_downloader
+
+Thanks to the author and use it by your own way.
+
+---
 
 For more infomation about the project please read in [Nettruyen Downloader](https://github.com/quantrancse/nettruyen-downloaderm).
 
