@@ -10,7 +10,14 @@ import requests
 from bs4 import BeautifulSoup
 
 HEADERS = {
-    'user-agent': ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36')}
+    'Connection': 'keep-alive',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36',
+    'DNT': '1',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+    'Referer': 'http://www.nettruyenvip.com/',
+    'Accept-Encoding': 'gzip, deflate',
+    'Accept-Language': 'en-US,en;q=0.9'
+}
 
 
 class MangaInfo():
@@ -85,14 +92,18 @@ class DownloadEngine():
         for content_url in soup.find('div', class_='reading-detail box_doc').find_all('img'):
             if content_url not in contents:
                 if content_url.has_attr('data-cdn') and any(img_fm in content_url['data-cdn'] for img_fm in self.image_formats):
-                    contents.append(content_url['data-cdn'])
+                    img_url = content_url['data-cdn']
                 elif any(img_fm in content_url['src'] for img_fm in self.image_formats):
-                    contents.append(content_url['src'])
+                    img_url = content_url['src']
                 elif content_url.has_attr('data-original'):
-                    contents.append(content_url['data-original'])
+                    img_url = content_url['data-original']
                 else:
-                    contents.append(content_url['src'])
+                    img_url = content_url['src']
+                contents.append(self.format_img_url(img_url))
         return contents
+
+    def format_img_url(self, url):
+        return url.replace('//', 'http://')
 
     def getImagePaths(self, chapter_dir_path, contents):
         img_path_list = []
@@ -200,12 +211,13 @@ class Bridge():
     def checkValidUrl(self):
         current_manga_url = self.manga_url
 
-        if not any(substr in current_manga_url for substr in ['nhattruyen.com/truyen-tranh/', 'nettruyen.com/truyen-tranh/']):
+        if not any(substr in current_manga_url for substr in ['nhattruyenhay.com/truyen-tranh/', 'nettruyenvip.com/truyen-tranh/']):
             print('Invalid manga url. Please try again.')
             return False
         else:
             try:
-                request = requests.get(current_manga_url, timeout=5)
+                request = requests.get(
+                    current_manga_url, headers=HEADERS, timeout=5)
                 soup = BeautifulSoup(request.text, 'html.parser')
                 if not soup.find('div', id='nt_listchapter'):
                     print('Invalid manga url. Please try again.')
@@ -220,7 +232,8 @@ class Bridge():
 
     def crawlMangaHomePage(self):
         try:
-            request = requests.get(self.current_manga.manga_url,  timeout=10)
+            request = requests.get(
+                self.current_manga.manga_url, headers=HEADERS, timeout=10)
             soup = BeautifulSoup(request.text, 'html.parser')
 
             self.current_manga.manga_name = soup.find(

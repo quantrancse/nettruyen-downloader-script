@@ -18,9 +18,9 @@
 
 <!-- ABOUT -->
 ## About
-[Update_1] This tool is not working anymore. The raw requests to the image host have been blocked by the Cloudflare firewall. And I'm too lazy.
+[Update: 07-05-2021] This tool is working.
 
-[Update_2] I've found a Tampermonkey script that works on different manga sites: https://github.com/lelinhtinh/Userscript/tree/master/manga_comic_downloader
+[Other] I've found a Tampermonkey script that works on different manga sites: https://github.com/lelinhtinh/Userscript/tree/master/manga_comic_downloader
 
 Thanks to the author and use it by your own way.
 
