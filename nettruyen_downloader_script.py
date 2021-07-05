@@ -91,12 +91,12 @@ class DownloadEngine():
 
         for content_url in soup.find('div', class_='reading-detail box_doc').find_all('img'):
             if content_url not in contents:
-                if content_url.has_attr('data-cdn') and any(img_fm in content_url['data-cdn'] for img_fm in self.image_formats):
-                    img_url = content_url['data-cdn']
-                elif any(img_fm in content_url['src'] for img_fm in self.image_formats):
+                if any(img_fm in content_url['src'] for img_fm in self.image_formats):
                     img_url = content_url['src']
                 elif content_url.has_attr('data-original'):
                     img_url = content_url['data-original']
+                elif content_url.has_attr('data-cdn') and any(img_fm in content_url['data-cdn'] for img_fm in self.image_formats):
+                    img_url = content_url['data-cdn']
                 else:
                     img_url = content_url['src']
                 contents.append(self.format_img_url(img_url))
@@ -166,7 +166,7 @@ class DownloadEngine():
             while True:
                 try:
                     img_data = requests.get(
-                        img_url, headers=HEADERS, timeout=5)
+                        img_url, headers=HEADERS, timeout=10)
                     if img_data.status_code == 403:
                         self.error403_signal = 1
                     else:
