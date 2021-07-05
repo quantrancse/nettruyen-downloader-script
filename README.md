@@ -36,9 +36,10 @@ The script will download into current working directory.
 ### Prerequisites
 
 * python 3.8.2
+* bs4
 * argparse
 ```sh
-pip install argparse
+pip install argparse bs4 requests
 ```
 ### Run the script
 ```sh
