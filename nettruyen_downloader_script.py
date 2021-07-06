@@ -5,6 +5,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from os import mkdir
 from os.path import isdir
+from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -14,7 +15,6 @@ HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36',
     'DNT': '1',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-    'Referer': 'http://www.nettruyenvip.com/',
     'Accept-Encoding': 'gzip, deflate',
     'Accept-Language': 'en-US,en;q=0.9'
 }
@@ -37,18 +37,18 @@ class DownloadEngine():
         self.stop_signal = 0
         self.error403_signal = 0
 
-    def setManga(self, manga):
+    def set_manga(self, manga):
         self.current_manga = manga
         self.image_formats = ['.jpg', '.jpeg', '.png', '.gif', '.tiff', '.bmp']
 
-    def stopDownload(self, sig, frame):
+    def stop_download(self, sig, frame):
         self.stop_signal = 1
 
     def run(self):
-        signal.signal(signal.SIGINT, self.stopDownload)
-        self.crawlChapterDataList()
+        signal.signal(signal.SIGINT, self.stop_download)
+        self.crawl_chapter_data_list()
 
-    def crawlChapterDataList(self):
+    def crawl_chapter_data_list(self):
         chapter_list = []
 
         # Get each chapter info
@@ -78,15 +78,16 @@ class DownloadEngine():
 
                 chapter_dir_path = self.current_manga.save_path + \
                     '/' + chapter_data['chapter_name']
-                mkdir(chapter_dir_path.replace('\"', '').replace('\'', '').replace('?', '').replace('!', ''))
+                mkdir(chapter_dir_path.replace('\"', '').replace(
+                    '\'', '').replace('?', '').replace('!', ''))
                 chapter_data['chapter_dir_path'] = chapter_dir_path
-                self.getChapterContents(chapter_data)
+                self.get_chapter_contents(chapter_data)
                 index += 1
 
         print('Download Done')
         sys.exit(0)
 
-    def getImageUrls(self, soup):
+    def get_image_urls(self, soup):
         contents = []
 
         for content_url in soup.find('div', class_='reading-detail box_doc').find_all('img'):
@@ -105,7 +106,7 @@ class DownloadEngine():
     def format_img_url(self, url):
         return url.replace('//', 'http://')
 
-    def getImagePaths(self, chapter_dir_path, contents):
+    def get_image_paths(self, chapter_dir_path, contents):
         img_path_list = []
         image_index = 1
 
@@ -121,7 +122,7 @@ class DownloadEngine():
 
         return img_path_list
 
-    def getChapterContents(self, chapter_data):
+    def get_chapter_contents(self, chapter_data):
         try:
             # Request chapter url
             request = requests.get(
@@ -129,10 +130,10 @@ class DownloadEngine():
             soup = BeautifulSoup(request.text, 'html.parser')
 
             # Get image url
-            contents = self.getImageUrls(soup)
+            contents = self.get_image_urls(soup)
 
             # Get image name
-            img_path_list = self.getImagePaths(
+            img_path_list = self.get_image_paths(
                 chapter_data['chapter_dir_path'], contents)
 
             image_data_list = list(
@@ -145,18 +146,18 @@ class DownloadEngine():
 
             # Threading for download each image
             with ThreadPoolExecutor(max_workers=20) as executor:
-                executor.map(self.downloadImage, image_data_list)
+                executor.map(self.download_image, image_data_list)
 
             if self.error403_signal:
                 print(chapter_data['chapter_name'] +
                       ': Can not download some images. Please check again!')
                 self.error403_signal = 0
-        except:
+        except Exception:
             print('Error get chapter info. Please try again later.')
 
         print('Finish ' + chapter_data['chapter_name'])
 
-    def downloadImage(self, image_data_list):
+    def download_image(self, image_data_list):
         if not self.stop_signal:
             img_path_name, img_url = image_data_list
 
@@ -173,7 +174,7 @@ class DownloadEngine():
                         with open(img_path_name, 'wb') as handler:
                             handler.write(img_data.content)
                     break
-                except:
+                except Exception:
                     if time.time() - start > timeout:
                         print('Error download image: ' + img_path_name)
                         break
@@ -186,14 +187,14 @@ class Bridge():
 
     current_manga = MangaInfo()
 
-    def startDownload(self, manga_url, from_chapter_input, to_chapter_input):
+    def start_download(self, manga_url, from_chapter_input, to_chapter_input):
         self.manga_url = manga_url
         self.from_chapter_input = from_chapter_input
         self.to_chapter_input = to_chapter_input
-        self.downloadChapter()
+        self.download_chapter()
 
-    def downloadChapter(self):
-        if self.checkValidUrl() and self.getChapterInput():
+    def download_chapter(self):
+        if self.check_valid_url() and self.get_chapter_input():
             manga_save_path = self.current_manga.manga_name
             manga_save_path = manga_save_path.replace(
                 '\"', '').replace('\'', '').replace('?', '').replace('!', '')
@@ -203,17 +204,22 @@ class Bridge():
             self.current_manga.save_path = manga_save_path
 
             engine = DownloadEngine()
-            engine.setManga(self.current_manga)
+            engine.set_manga(self.current_manga)
             engine.run()
         else:
             return
 
-    def checkValidUrl(self):
+    def check_valid_url(self):
         current_manga_url = self.manga_url
+        result = False
 
-        if not any(substr in current_manga_url for substr in ['nhattruyenhay.com/truyen-tranh/', 'nettruyenvip.com/truyen-tranh/']):
+        domain = urlparse(current_manga_url)
+        referer_header = '{uri.scheme}://{uri.netloc}/'.format(uri=domain)
+        HEADERS['Referer'] = referer_header
+
+        if not any(substr in current_manga_url for substr in ['nhattruyen', 'nettruyen']):
             print('Invalid manga url. Please try again.')
-            return False
+            return result
         else:
             try:
                 request = requests.get(
@@ -221,16 +227,16 @@ class Bridge():
                 soup = BeautifulSoup(request.text, 'html.parser')
                 if not soup.find('div', id='nt_listchapter'):
                     print('Invalid manga url. Please try again.')
-                    return False
                 else:
                     self.current_manga.manga_url = str(current_manga_url)
-                    self.crawlMangaHomePage()
-                    return True
-            except:
+                    self.crawl_manga_home_page()
+                    result = True
+                return result
+            except Exception:
                 print('Error getting manga page. Please try again.')
                 return False
 
-    def crawlMangaHomePage(self):
+    def crawl_manga_home_page(self):
         try:
             request = requests.get(
                 self.current_manga.manga_url, headers=HEADERS, timeout=10)
@@ -247,28 +253,29 @@ class Bridge():
                 chapter_url_list.append(chapter['href'])
             self.current_manga.chapter_url_list = chapter_url_list
 
-        except:
+        except Exception:
             print('Error getting manga page. Please try again.')
 
-    def getChapterIndex(self, chapter_input):
+    def get_chapter_index(self, chapter_input):
+        index = None
         if chapter_input == 'start_chapter':
-            return 0
+            index = 0
         elif chapter_input == 'end_chapter':
-            return len(self.current_manga.chapter_name_list) - 1
+            index = len(self.current_manga.chapter_name_list) - 1
         else:
             for chapter in self.current_manga.chapter_name_list:
                 chapter_name = chapter.split()[1]
                 if ':' in chapter_name:
                     chapter_name = chapter_name[:-1]
                 if chapter_input == chapter_name:
-                    return self.current_manga.chapter_name_list.index(
+                    index = self.current_manga.chapter_name_list.index(
                         chapter)
-            return None
+        return index
 
-    def getChapterInput(self):
-        from_chapter_index = self.getChapterIndex(
+    def get_chapter_input(self):
+        from_chapter_index = self.get_chapter_index(
             self.from_chapter_input)
-        to_chapter_index = self.getChapterIndex(self.to_chapter_input)
+        to_chapter_index = self.get_chapter_index(self.to_chapter_input)
 
         if from_chapter_index is not None and to_chapter_index is not None:
             if from_chapter_index > to_chapter_index:
@@ -298,10 +305,10 @@ if __name__ == '__main__':
     if not (args.all or args.fromto or args.chapter):
         parser.error('No action requested, add --all or --fromto or --chapter')
     elif args.all:
-        bridge.startDownload(args.manga_url, 'start_chapter', 'end_chapter')
+        bridge.start_download(args.manga_url, 'start_chapter', 'end_chapter')
     elif args.fromto:
-        bridge.startDownload(
+        bridge.start_download(
             args.manga_url, args.fromto[0], args.fromto[1])
     elif args.chapter:
-        bridge.startDownload(
+        bridge.start_download(
             args.manga_url, args.chapter[0], args.chapter[0])
